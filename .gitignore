@@ -1,2 +1,4 @@
 #exclude the test folder
 test/*
+.env
+__pycache__/*
