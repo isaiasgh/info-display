@@ -55,9 +55,9 @@ plt.style.use('dark_background')
 gpu_plot00 = GPUPlot()
 gpu_plot01 = GPUPlot()
 
-gpu_monitor00 = GPUMonitor()
+gpu_monitor00 = GPUMonitor(http_listen=True, port=12345)
 gpu_monitor00.start_monitoring()
-gpu_monitor01 = GPUMonitor()
+gpu_monitor01 = GPUMonitor(http_listen=True, port=12346)
 gpu_monitor01.start_monitoring()
 
 # main  loop
