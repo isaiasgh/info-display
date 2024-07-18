@@ -3,11 +3,14 @@ import sys
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 import threading
+import time
 
 from gpumonitor import GPUMonitor
 from gpuploter import GPUPlot, gpu_monitoring_thread
 from welcome_scroller import WelcomeScroller
 from headline_scroller import HeadlineScroller
+from newsapi import NEWSAPI
+from cpumonitor import CPUMonitor
 
 pygame.init()
 
@@ -21,33 +24,12 @@ pygame.mouse.set_visible(False)
 
 background_color = (0, 0, 0)
 
-#will use api later this is for testing
-headlines = [{'source': 'Associated Press',
-  'headline': 'The son of Asia’s richest man gets married in the year’s most extravagant wedding; - T',
-  'time': '2024-13-07 11:25',
-  'body': "The youngest son of Mukesh Ambani, Asia’s richest man, has married his longtime girlfriend in what many have dubbed the wedding of the year. It's being attended by global celebrities, business tycoons and politicians, highlighting the billionaire’s staggering…"},
- {'source': 'Politico',
-  'headline': 'Actor Matthew McConaughey tells governors he is still mulling future run for political office',
-  'time': '2024-13-07 10:56',
-  'body': None},
- {'source': 'CBS Sports',
-  'headline': 'Jalen Brunson contract extension FAQ: How much did Knicks star really leave on table, what move means for NY',
-  'time': '2024-13-07 10:51',
-  'body': 'Brunson re-signed with the Knicks for $156.5 million over four years'},
- {'source': 'Deadline',
-  'headline': 'Harrison Butker Responds To ESPYs Diss By Serena Williams And Quinta Brunson',
-  'time': '2024-13-07 10:15',
-  'body': 'The Kansas City Chiefs kicker spoke to NBC News for his rebuttal.'},
- {'source': 'New York Post',
-  'headline': 'Smiling Alec Baldwin heads to celebratory dinner after ‘Rust’ involuntary manslaughter charges shockingly tossed ',
-  'time': '2024-13-07 09:27',
-  'body': 'The “30 Rock” star, 66, smiled with his entourage outside Casa Chimayo restaurant in Santa Fe.'}]
-
-
+newsapi = NEWSAPI()  
+headlines = newsapi.get_stories()
 
 #scroller code
 welcome_scroller = WelcomeScroller('Welcome to Valafar Lab', screen_info, screen_width, scrollspeed=2)
-headlines_scroller = HeadlineScroller(headlines, screen, 0, screen_height - screen_height // 2, screen_width // 2, screen_height // 2)
+headlines_scroller = HeadlineScroller(newsapi, headlines, screen, 0, screen_height - screen_height // 2, screen_width // 2, screen_height // 2)
 
 #gpu graph code
 plt.style.use('dark_background')
@@ -60,10 +42,47 @@ gpu_monitor00.start_monitoring()
 gpu_monitor01 = GPUMonitor(http_listen=True, port=12346)
 gpu_monitor01.start_monitoring()
 
+
+
+
+def render_cpu_info(screen, cpu_monitor, x, y):
+    fontbig = pygame.font.Font(pygame.font.match_font('ubuntusansmono'), 30)
+    font = pygame.font.Font(pygame.font.match_font('ubuntusansmono'), 20)
+
+    
+    cpu_text = fontbig.render(f"CPU: {cpu_monitor.cpu_percent:.1f}%", True, (255, 255, 255))
+    ram_text = fontbig.render(f"RAM: {cpu_monitor.ram_percent:.1f}%", True, (255, 255, 255))
+    
+    screen.blit(cpu_text, (x, y))
+    screen.blit(ram_text, (x, y + 30))
+    
+    y_offset = 85
+    for proc in cpu_monitor.top_processes:
+        proc_text = font.render(
+            f"/{proc['username'][:10]:<11}"
+            f"cpu:{proc['cpu_percent']:>6.2f}%   mem:{proc['memory_percent']:>6.2f}%"
+            f"  pid:{proc['pid']:>6}"
+            f" {proc['name'][:25]:<25}",
+            True, (255, 255, 255))
+        screen.blit(proc_text, (x, y + y_offset))
+        y_offset += 30
+
+
+
+
+cpu_monitor = CPUMonitor(http_listen=True, port=12347)
+cpu_monitor.start_monitoring()
+
+beast_cpu = pygame.font.Font(None, 55).render('Beast CPU', True, (99,176,227))
+
 # main  loop
+
 clock = pygame.time.Clock()
-update_interval = 5000 #5 sec
+update_interval = 5000  # 5 sec
+news_update_interval = 900000  # 900 sec (15 minutes)
 running = True
+
+last_news_update = time.time() * 1000 
 
 gpu_thread00 = threading.Thread(target=gpu_monitoring_thread, args=(gpu_monitor00, gpu_plot00, update_interval, running))
 gpu_thread00.start()
@@ -71,17 +90,18 @@ gpu_thread00.start()
 gpu_thread01 = threading.Thread(target=gpu_monitoring_thread, args=(gpu_monitor01, gpu_plot01, update_interval, running))
 gpu_thread01.start()
 
-
-
-#main loop
-clock = pygame.time.Clock()
-running = True
-
 while running:
+    current_time = time.time() * 1000  
+    
     for event in pygame.event.get():
         if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
-            print('good bye')
             running = False
+
+    # check if time to update news
+    # if current_time - last_news_update >= news_update_interval:
+    #     new_headlines = newsapi.get_stories()
+    #     headlines_scroller.headlines = (new_headlines)
+    #     last_news_update = current_time
 
     screen.fill(background_color)
 
@@ -101,17 +121,19 @@ while running:
     pygame.draw.rect(screen, (255,255,255), (screen_width//2, height_of_welcome_text, screen_width//2, screen_height//2 - height_of_welcome_text), 1)
 
     with gpu_plot00.lock:
-      if gpu_plot00.surface:
-        screen.blit(gpu_plot00.surface, (screen_width // 2 + 10, height_of_welcome_text + 10))
+        if gpu_plot00.surface:
+            screen.blit(gpu_plot00.surface, (screen_width // 2 + 20, height_of_welcome_text + 10))
 
     with gpu_plot01.lock:
-      if gpu_plot01.surface:
-        screen.blit(gpu_plot01.surface, (screen_width // 2 + 10, screen_height//2 + 10))
+        if gpu_plot01.surface:
+            screen.blit(gpu_plot01.surface, (screen_width // 2 + 20, screen_height//2 + 10))
 
+    screen.blit(beast_cpu, (screen_width//5, welcome_scroller.text_rect.height + 10))
+    render_cpu_info(screen, cpu_monitor, screen_width // 16, height_of_welcome_text + 55)
 
     pygame.display.flip()
     clock.tick(60)  # frame rate = 60
-    
+
 running = False
 gpu_thread00.join()
 gpu_thread01.join()

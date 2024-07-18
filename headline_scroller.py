@@ -3,7 +3,8 @@ import pygame
 
 # Headlines scroller class
 class HeadlineScroller:
-    def __init__(self, headlines, screen, subscreen_x_start, subscreen_y_start, sub_screen_width, sub_screen_height, scroll_speed=1, titlefont_size=28, body_font_size=21,subfont_size=20, title_color=(255, 255, 255), source_color=(0, 122, 204), date_color=(99,176,227)):
+    def __init__(self, api, headlines, screen, subscreen_x_start, subscreen_y_start, sub_screen_width, sub_screen_height, scroll_speed=1, titlefont_size=26, body_font_size=19,subfont_size=17, title_color=(255, 255, 255), source_color=(0, 122, 204), date_color=(99,176,227)):
+        self.api = api
         self.headlines = headlines
         self.num_headlines = len(headlines)
 
@@ -16,9 +17,9 @@ class HeadlineScroller:
         self.x = self.subsurface_rect.width
         self.sub_screen_height = sub_screen_height 
 
-        self.headline_font = pygame.font.Font(None, titlefont_size)
-        self.sub_font = pygame.font.Font(None, subfont_size)
-        self.body_font = pygame.font.Font(None, body_font_size)
+        self.headline_font = pygame.font.Font(pygame.font.match_font('ubuntusansmono'), titlefont_size)
+        self.sub_font = pygame.font.Font(pygame.font.match_font('ubuntusansmono'), subfont_size)
+        self.body_font = pygame.font.Font(pygame.font.match_font('ubuntusansmono'), body_font_size)
         self.y_padding = sub_screen_height // len(headlines)
         self.headline_col = title_color
         self.date_col = date_color
@@ -27,6 +28,7 @@ class HeadlineScroller:
     def update(self):
         self.x -= self.scroll_speed
         if self.x <= -self.max_left:  # Reset position when pad screen
+            self.headlines = self.api.get_stories()
             self.x = self.subsurface_rect.width
 
     def draw(self):
@@ -38,7 +40,7 @@ class HeadlineScroller:
             time_text = self.sub_font.render(headline["time"], True, self.date_col)
             body_text = self.body_font.render(headline["body"], True, self.headline_col)
 
-            self.max_left = max(body_text.get_width(), self.max_left)
+            self.max_left = max(body_text.get_width(), headline_text.get_width(), self.max_left)
 
             self.subsurface.blit(headline_text, (x, i * self.y_padding + 15))
             self.subsurface.blit(body_text, (x, i * self.y_padding + 5*(headline_text.get_height() // 4) + 15))

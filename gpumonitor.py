@@ -9,7 +9,7 @@ class GPUMonitor:
     def __init__(self, max_data_points=360, http_listen=False, port=None):
         self.max_data_points = max_data_points
         self.gpu_usage_data = [0] * max_data_points
-        self.gpu_temp_data = [0] * max_data_points
+        self.gpu_temp_data = [10] * max_data_points
         self.http_listen = http_listen
         self.port = port
         self.buffer_size=1024
@@ -24,7 +24,7 @@ class GPUMonitor:
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
             sock.bind(('', self.port))
-            sock.settimeout(12)  # Set a timeout of 5 seconds
+            sock.settimeout(12)  # Set a timeout of 12 seconds
 
             try:
                 data, addr = sock.recvfrom(self.buffer_size)
@@ -50,7 +50,7 @@ class GPUMonitor:
             if len(self.gpu_usage_data) > self.max_data_points:
                 self.gpu_usage_data.pop(0)
                 self.gpu_temp_data.pop(0)
-            time.sleep(5)
+            time.sleep(1)
 
     def start_monitoring(self):
         monitoring_thread = threading.Thread(target=self.update_gpu_stats)
