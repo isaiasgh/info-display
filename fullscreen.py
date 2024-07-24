@@ -48,8 +48,8 @@ gpu_monitor01.start_monitoring()
 
 
 def render_cpu_info(screen, cpu_monitor, x, y):
-    fontbig = pygame.font.Font(pygame.font.match_font('ubuntusansmono'), 30)
-    font = pygame.font.Font(pygame.font.match_font('ubuntusansmono'), 20)
+    fontbig = pygame.font.Font(pygame.font.match_font('ubuntumono'), 30)
+    font = pygame.font.Font(pygame.font.match_font('ubuntumono'), 20)
 
     
     cpu_text = fontbig.render(f"CPU: {cpu_monitor.cpu_percent:.1f}%", True, (255, 255, 255))
