@@ -26,5 +26,5 @@ WantedBy=multi-user.target
 - then you start the service `sudo systemctl status data_sender.service`
 - the you reload **daemon** `systemctl daemon-reload`
 
--if you ever need to check the the status it can be doe this way `sudo systemctl status data_sender.service`
--if you ever need to restart the service it can be done by `sudo systemctl restart data_sender.service`
+- if you ever need to check the the status it can be doe this way `sudo systemctl status data_sender.service`
+- if you ever need to restart the service it can be done by `sudo systemctl restart data_sender.service`
