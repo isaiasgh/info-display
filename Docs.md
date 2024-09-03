@@ -4,7 +4,8 @@ ___
 ## How to set up the datasender with systemd
 
 -The systemd files can be found in : `/lib/systemd/system`
--There you will need **sudo** privlages to eddit the file you made mine looks like this:
+- `sudo vim name.service`
+-There you will need **sudo** privlages to edit the file you made mine looks like this:
 
 ```
 [Unit]
